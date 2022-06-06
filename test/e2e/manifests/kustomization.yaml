@@ -1,0 +1,33 @@
+resources:
+  - ../../../deploy/kubernetes
+  - consumer.yaml
+images:
+  - name: ghcr.io/choffmeister/csi-driver-truenas
+    newTag: 0.0.0-dev
+patches:
+  - target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: csi-driver-truenas-csi-controller
+      namespace: kube-system
+    patch: |
+      - op: add
+        path: /spec/template/spec/containers/0/imagePullPolicy
+        value: Always
+      - op: add
+        path: /spec/template/spec/containers/0/args/-
+        value: "-v"
+  - target:
+      group: apps
+      version: v1
+      kind: DaemonSet
+      name: csi-driver-truenas-csi-node
+      namespace: kube-system
+    patch: |
+      - op: add
+        path: /spec/template/spec/containers/0/imagePullPolicy
+        value: Always
+      - op: add
+        path: /spec/template/spec/containers/0/args/-
+        value: "-v"

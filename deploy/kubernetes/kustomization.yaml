@@ -1,0 +1,6 @@
+kind: Kustomization
+resources:
+- csidriver.yaml
+- storageclass.yaml
+- controller
+- node

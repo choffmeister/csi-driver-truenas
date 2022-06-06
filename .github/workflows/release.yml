@@ -1,0 +1,50 @@
+name: release
+on:
+ push:
+    tags:
+    - "*"
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    - uses: actions/setup-go@v2
+      with:
+        go-version: 1.17.x
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
+    - uses: docker/login-action@v1
+      with:
+        registry: ghcr.io
+        username: choffmeister
+        password: ${{ secrets.GITHUB_TOKEN }}
+    - name: Run GoReleaser
+      uses: goreleaser/goreleaser-action@v2
+      with:
+        distribution: goreleaser
+        args: release --rm-dist
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Prepare kustomize
+      run: |
+        cd /tmp
+        curl -fsSL https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv${VERSION}/kustomize_v${VERSION}_linux_amd64.tar.gz | tar xz
+        mv kustomize /usr/local/bin
+        kustomize version
+      env:
+        VERSION: 4.5.2
+    - name: Generate manifest
+      run: |
+        export VERSION=$(echo "${{ github.ref }}" | sed "s#^refs/tags/v##")
+        sed -i "s#%version%#$VERSION#" .github/workflows/release-manifest/kustomization.yaml
+        kustomize build .github/workflows/release-manifest > manifest.yaml
+    - name: Add manifest to release
+      uses: svenstaro/upload-release-action@v2
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: manifest.yaml
+        asset_name: manifest.yaml
+        tag: ${{ github.ref }}
+        overwrite: true

@@ -1,0 +1,5 @@
+resources:
+- ../../../deploy/kubernetes
+images:
+- name: ghcr.io/choffmeister/csi-driver-truenas:latest
+  newTag: "%version%"

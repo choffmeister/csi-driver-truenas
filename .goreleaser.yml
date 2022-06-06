@@ -1,0 +1,34 @@
+# This is an example .goreleaser.yml file with some sensible defaults.
+# Make sure to check the documentation at https://goreleaser.com
+project_name: csi-driver-truenas
+before:
+  hooks:
+    - go mod tidy
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
+      - amd64
+dockers:
+  - image_templates:
+      - "ghcr.io/choffmeister/{{ .ProjectName }}:{{ .Version }}"
+      - "ghcr.io/choffmeister/{{ .ProjectName }}:latest"
+    use: buildx
+    goarch: amd64
+    dockerfile: Dockerfile
+    build_flag_templates:
+      - "--platform=linux/amd64"
+    extra_files:
+      - iscsiadm
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "0.0.0-dev"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'

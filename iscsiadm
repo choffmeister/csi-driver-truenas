@@ -1,0 +1,17 @@
+#!/bin/sh
+set -euo pipefail
+
+PID=""
+
+get_iscsid_pid() {
+  PID=$(pidof -s iscsid | grep '.\+')
+}
+
+if get_iscsid_pid &>/dev/null; then
+  echo $PID >/dev/null
+else
+  echo "Unable to find process id of iscsid on host"
+  exit 1
+fi
+
+nsenter --mount="/proc/$PID/ns/mnt" --net="/proc/$PID/ns/net" iscsiadm "$@"

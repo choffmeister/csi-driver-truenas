@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: csi-driver-truenas-consumer
+  labels:
+    app: csi-driver-truenas-consumer
+spec:
+  serviceName: csi-driver-truenas-consumer
+  replicas: 1
+  selector:
+    matchLabels:
+      app: csi-driver-truenas-consumer
+  template:
+    metadata:
+      labels:
+        app: csi-driver-truenas-consumer
+    spec:
+      terminationGracePeriodSeconds: 1
+      containers:
+        - name: pause
+          image: alpine:3.12
+          command:
+            - sh
+          args:
+            - -c
+            - |
+              df -h /mnt/data
+              touch /mnt/data/$(date -Iseconds)
+              ls -al /mnt/data
+              exec sleep infinite
+          ports:
+            - name: tcp
+              containerPort: 5432
+          volumeMounts:
+            - name: data
+              mountPath: /mnt/data
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        storageClassName: csi-driver-truenas-volumes
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi

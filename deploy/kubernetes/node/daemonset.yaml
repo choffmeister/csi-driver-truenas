@@ -1,0 +1,99 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: csi-driver-truenas-csi-node
+  namespace: kube-system
+  labels:
+    app: csi-driver-truenas-csi-node
+spec:
+  selector:
+    matchLabels:
+      app: csi-driver-truenas-csi-node
+  template:
+    metadata:
+      labels:
+        app: csi-driver-truenas-csi-node
+    spec:
+      hostPID: true
+      tolerations:
+      - effect: NoExecute
+        operator: Exists
+      - effect: NoSchedule
+        operator: Exists
+      - key: CriticalAddonsOnly
+        operator: Exists
+      containers:
+      - name: csi-driver-truenas-csi-driver
+        image: ghcr.io/choffmeister/csi-driver-truenas:latest
+        args:
+        - node
+        env:
+        - name: CSI_ENDPOINT
+          value: unix:///run/csi/socket
+        - name: KUBE_NODE_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        volumeMounts:
+        - name: kubelet-dir
+          mountPath: /var/lib/kubelet
+          mountPropagation: "Bidirectional"
+        - name: plugin-dir
+          mountPath: /run/csi
+        - name: device-dir
+          mountPath: /dev
+        - name: host
+          mountPath: /host
+        securityContext:
+          privileged: true
+        ports:
+        - containerPort: 9189
+          name: metrics
+        - name: healthz
+          containerPort: 9808
+          protocol: TCP
+        livenessProbe:
+          failureThreshold: 5
+          httpGet:
+            path: /healthz
+            port: healthz
+          initialDelaySeconds: 10
+          timeoutSeconds: 3
+          periodSeconds: 2
+      - name: csi-node-driver-registrar
+        image: k8s.gcr.io/sig-storage/csi-node-driver-registrar:v2.2.0
+        args:
+        - --kubelet-registration-path=/var/lib/kubelet/plugins/truenas.csi.choffmeister.de/socket
+        volumeMounts:
+        - name: plugin-dir
+          mountPath: /run/csi
+        - name: registration-dir
+          mountPath: /registration
+      - name: liveness-probe
+        imagePullPolicy: Always
+        image: k8s.gcr.io/sig-storage/livenessprobe:v2.3.0
+        volumeMounts:
+        - mountPath: /run/csi
+          name: plugin-dir
+      volumes:
+      - name: kubelet-dir
+        hostPath:
+          path: /var/lib/kubelet
+          type: Directory
+      - name: plugin-dir
+        hostPath:
+          path: /var/lib/kubelet/plugins/truenas.csi.choffmeister.de
+          type: DirectoryOrCreate
+      - name: registration-dir
+        hostPath:
+          path: /var/lib/kubelet/plugins_registry
+          type: Directory
+      - name: device-dir
+        hostPath:
+          path: /dev
+          type: Directory
+      - name: host
+        hostPath:
+          path: /
+          type: Directory

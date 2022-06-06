@@ -1,0 +1,4 @@
+kind: Kustomization
+resources:
+- daemonset.yaml
+- service.yaml

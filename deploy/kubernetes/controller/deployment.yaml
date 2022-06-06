@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: csi-driver-truenas-csi-controller
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      app: csi-driver-truenas-csi-controller
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: csi-driver-truenas-csi-controller
+    spec:
+      serviceAccountName: csi-driver-truenas-csi-controller
+      containers:
+      - name: csi-driver-truenas-csi-driver
+        image: ghcr.io/choffmeister/csi-driver-truenas:latest
+        args:
+        - controller
+        env:
+        - name: CSI_ENDPOINT
+          value: unix:///run/csi/socket
+        - name: KUBE_NODE_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        volumeMounts:
+        - name: socket-dir
+          mountPath: /run/csi
+        ports:
+        - containerPort: 9189
+          name: metrics
+        - name: healthz
+          containerPort: 9808
+          protocol: TCP
+        livenessProbe:
+          failureThreshold: 5
+          httpGet:
+            path: /healthz
+            port: healthz
+          initialDelaySeconds: 10
+          timeoutSeconds: 3
+          periodSeconds: 2
+      - name: csi-attacher
+        image: k8s.gcr.io/sig-storage/csi-attacher:v3.2.1
+        volumeMounts:
+        - name: socket-dir
+          mountPath: /run/csi
+      - name: csi-resizer
+        image: k8s.gcr.io/sig-storage/csi-resizer:v1.2.0
+        volumeMounts:
+        - name: socket-dir
+          mountPath: /run/csi
+      - name: csi-provisioner
+        image: k8s.gcr.io/sig-storage/csi-provisioner:v2.2.2
+        args:
+        - --feature-gates=Topology=true
+        - --default-fstype=ext4
+        volumeMounts:
+        - name: socket-dir
+          mountPath: /run/csi
+      - name: liveness-probe
+        imagePullPolicy: Always
+        image: k8s.gcr.io/sig-storage/livenessprobe:v2.3.0
+        volumeMounts:
+        - mountPath: /run/csi
+          name: socket-dir
+      volumes:
+      - name: socket-dir
+        emptyDir: {}
