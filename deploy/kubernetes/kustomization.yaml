@@ -1,6 +1,7 @@
 kind: Kustomization
 resources:
 - csidriver.yaml
+- namespace.yaml
 - storageclass.yaml
 - controller
 - node

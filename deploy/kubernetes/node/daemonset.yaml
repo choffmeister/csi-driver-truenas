@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   name: csi-driver-truenas-csi-node
-  namespace: kube-system
+  namespace: csi-driver-truenas
   labels:
     app: csi-driver-truenas-csi-node
 spec:

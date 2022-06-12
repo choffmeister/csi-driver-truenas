@@ -2,12 +2,12 @@ apiVersion: v1
 kind: Service
 metadata:
   name: csi-driver-truenas-csi-node-metrics
-  namespace: kube-system
+  namespace: csi-driver-truenas
   labels:
-    app: csi-driver-truenas-csi
+    app: csi-driver-truenas-csi-node
 spec:
   selector:
-    app: csi-driver-truenas-csi
+    app: csi-driver-truenas-csi-node
   ports:
     - port: 9189
       name: metrics

@@ -128,13 +128,6 @@ func (s *ControllerService) ControllerGetCapabilities(ctx context.Context, req *
 					},
 				},
 			},
-			// {
-			// 	Type: &proto.ControllerServiceCapability_Rpc{
-			// 		Rpc: &proto.ControllerServiceCapability_RPC{
-			// 			Type: proto.ControllerServiceCapability_RPC_PUBLISH_UNPUBLISH_VOLUME,
-			// 		},
-			// 	},
-			// },
 			{
 				Type: &proto.ControllerServiceCapability_Rpc{
 					Rpc: &proto.ControllerServiceCapability_RPC{

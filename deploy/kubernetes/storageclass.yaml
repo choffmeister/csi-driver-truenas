@@ -1,8 +1,8 @@
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
-  namespace: kube-system
   name: csi-driver-truenas-volumes
+  namespace: csi-driver-truenas
   # annotations:
   #   storageclass.kubernetes.io/is-default-class: "true"
 provisioner: truenas.csi.choffmeister.de
@@ -11,8 +11,8 @@ allowVolumeExpansion: true
 reclaimPolicy: Delete
 parameters:
   csi.storage.k8s.io/provisioner-secret-name: csi-driver-truenas-volumes
-  csi.storage.k8s.io/provisioner-secret-namespace: kube-system
+  csi.storage.k8s.io/provisioner-secret-namespace: csi-driver-truenas
   csi.storage.k8s.io/controller-expand-secret-name: csi-driver-truenas-volumes
-  csi.storage.k8s.io/controller-expand-secret-namespace: kube-system
+  csi.storage.k8s.io/controller-expand-secret-namespace: csi-driver-truenas
   csi.storage.k8s.io/node-publish-secret-name: csi-driver-truenas-volumes
-  csi.storage.k8s.io/node-publish-secret-namespace: kube-system
+  csi.storage.k8s.io/node-publish-secret-namespace: csi-driver-truenas

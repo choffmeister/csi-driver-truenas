@@ -2,9 +2,9 @@ apiVersion: v1
 kind: Service
 metadata:
   name: csi-driver-truenas-csi-controller-metrics
-  namespace: kube-system
+  namespace: csi-driver-truenas
   labels:
-    app: csi-driver-truenas-csi
+    app: csi-driver-truenas-csi-controller
 spec:
   selector:
     app: csi-driver-truenas-csi-controller

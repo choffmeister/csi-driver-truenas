@@ -16,7 +16,7 @@ func Test_TruenasBackend(t *testing.T) {
 	backend := NewTruenasBackend()
 	err = backend.LoadParameters(map[string]string{})
 	assert.NoError(t, err)
-	err = backend.LoadSecrets(test.LoadTestEnv().StorageClassSecrets)
+	err = backend.LoadSecrets(storageClassSecretsFromEnv(test.LoadTestEnv("../../../test.env")))
 	assert.NoError(t, err)
 
 	name := "csi-driver-truenas-test-" + utils.RandomString(8)
@@ -44,7 +44,7 @@ func Test_TruenasBackend_Idempotency(t *testing.T) {
 	backend := NewTruenasBackend()
 	err = backend.LoadParameters(map[string]string{})
 	assert.NoError(t, err)
-	err = backend.LoadSecrets(test.LoadTestEnv().StorageClassSecrets)
+	err = backend.LoadSecrets(storageClassSecretsFromEnv(test.LoadTestEnv("../../../test.env")))
 	assert.NoError(t, err)
 
 	name := "csi-driver-truenas-test-" + utils.RandomString(8)
@@ -69,4 +69,18 @@ func Test_TruenasBackend_Idempotency(t *testing.T) {
 		err = backend.DeleteVolume(ctx, id)
 		assert.NoError(t, err)
 	})
+}
+
+func storageClassSecretsFromEnv(env test.TestEnv) map[string]string {
+	return map[string]string{
+		"truenas-url":             env.TruenasUrl,
+		"truenas-api-key":         env.TruenasApiKey,
+		"truenas-parent-dataset":  env.TruenasParentDataset,
+		"truenas-tls-skip-verify": "true",
+		"iscsi-base-iqn":          env.ISCSIBaseIQN,
+		"iscsi-portal-ip":         env.ISCSIPortalIP,
+		"iscsi-portal-port":       env.ISCSIPortalPort,
+		"iscsi-portal-id":         env.ISCSIPortalID,
+		"iscsi-initiator-id":      env.ISCSIInitiatorID,
+	}
 }

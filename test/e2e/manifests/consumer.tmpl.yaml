@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: csi-driver-truenas-consumer
+  namespace: csi-driver-truenas
   labels:
     app: csi-driver-truenas-consumer
 spec:

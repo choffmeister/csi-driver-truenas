@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: csi-driver-truenas-csi-controller
-  namespace: kube-system
+  namespace: csi-driver-truenas
 spec:
   selector:
     matchLabels:

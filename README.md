@@ -11,7 +11,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: csi-driver-truenas-volumes
-  namespace: kube-system
+  namespace: csi-driver-truenas
 stringData:
   truenas-url: "https://10.10.10.10"
   truenas-api-key: "1-super-secret"

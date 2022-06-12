@@ -11,25 +11,25 @@ import (
 	"time"
 )
 
-type ExecCommandOpts struct {
+type ExecOpts struct {
 	Name       string
 	Args       []string
 	Env        []string
+	Input      string
 	Output     io.Writer
 	Retries    int
 	RetryDelay time.Duration
-	Stdin      string
 }
 
 func Exec(name string, args ...string) (string, int, error) {
-	return ExecCommandWithOpts(ExecCommandOpts{
+	return ExecWithOpts(ExecOpts{
 		Name: name,
 		Args: args,
 	})
 }
 
 func ExecRetry(name string, args ...string) (string, int, error) {
-	return ExecCommandWithOpts(ExecCommandOpts{
+	return ExecWithOpts(ExecOpts{
 		Name:       name,
 		Args:       args,
 		Retries:    300 / 5,
@@ -38,7 +38,7 @@ func ExecRetry(name string, args ...string) (string, int, error) {
 }
 
 func ExecWithOutput(name string, args ...string) (string, int, error) {
-	return ExecCommandWithOpts(ExecCommandOpts{
+	return ExecWithOpts(ExecOpts{
 		Name:   name,
 		Args:   args,
 		Output: os.Stdout,
@@ -46,7 +46,7 @@ func ExecWithOutput(name string, args ...string) (string, int, error) {
 }
 
 func ExecRetryWithOutput(name string, args ...string) (string, int, error) {
-	return ExecCommandWithOpts(ExecCommandOpts{
+	return ExecWithOpts(ExecOpts{
 		Name:       name,
 		Args:       args,
 		Output:     os.Stdout,
@@ -55,7 +55,7 @@ func ExecRetryWithOutput(name string, args ...string) (string, int, error) {
 	})
 }
 
-func ExecCommandWithOpts(opts ExecCommandOpts) (string, int, error) {
+func ExecWithOpts(opts ExecOpts) (string, int, error) {
 	fmt.Printf("Executing command %s %v\n", opts.Name, opts.Args)
 
 	lastOutput := ""
@@ -64,8 +64,8 @@ func ExecCommandWithOpts(opts ExecCommandOpts) (string, int, error) {
 	attempt := 0
 	for attempt <= opts.Retries {
 		cmd := exec.Command(opts.Name, opts.Args...)
-		if opts.Stdin != "" {
-			cmd.Stdin = strings.NewReader(opts.Stdin)
+		if opts.Input != "" {
+			cmd.Stdin = strings.NewReader(opts.Input)
 		}
 		var outputBuffer bytes.Buffer
 		writer := ioutil.Discard
@@ -96,4 +96,19 @@ func ExecCommandWithOpts(opts ExecCommandOpts) (string, int, error) {
 		attempt++
 	}
 	return lastOutput, lastCode, lastErr
+}
+
+func Retry(fn func() error, maxAttempts int, delayBetweenAttempts time.Duration) error {
+	lastErr := (error)(nil)
+	attempt := 1
+	for attempt <= maxAttempts {
+		err := fn()
+		if err == nil {
+			return nil
+		}
+		lastErr = err
+		attempt++
+		time.Sleep(delayBetweenAttempts)
+	}
+	return lastErr
 }
