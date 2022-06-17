@@ -3,6 +3,8 @@ package services
 import (
 	"context"
 	"fmt"
+	"os"
+	"strings"
 	"time"
 
 	"github.com/choffmeister/csi-driver-truenas/internal/backends"
@@ -37,6 +39,36 @@ func (s *NodeService) NodeUnstageVolume(ctx context.Context, req *proto.NodeUnst
 }
 
 func (s *NodeService) NodePublishVolume(ctx context.Context, req *proto.NodePublishVolumeRequest) (*proto.NodePublishVolumeResponse, error) {
+	if ephemeral := req.VolumeContext["csi.storage.k8s.io/ephemeral"]; ephemeral == "true" {
+		cifsIP := req.Secrets["cifs-ip"]
+		if cifsIP == "" {
+			return nil, status.Error(codes.InvalidArgument, "volume context value cifs-ip is missing")
+		}
+		cifsShare := req.Secrets["cifs-share"]
+		if cifsShare == "" {
+			return nil, status.Error(codes.InvalidArgument, "volume context value cifs-share is missing")
+		}
+		cifsUsername := req.Secrets["cifs-username"]
+		if cifsUsername == "" {
+			return nil, status.Error(codes.InvalidArgument, "volume context value cifs-username is missing")
+		}
+		cifsPassword := req.Secrets["cifs-password"]
+		if cifsPassword == "" {
+			return nil, status.Error(codes.InvalidArgument, "volume context value cifs-password is missing")
+		}
+		cifs := fmt.Sprintf("//%s/%s", cifsIP, cifsShare)
+
+		utils.Info.Printf("Mounting cifs %s to %s\n", cifs, req.TargetPath)
+		if err := os.MkdirAll(req.TargetPath, 0o775); err != nil {
+			return nil, status.Error(codes.Internal, fmt.Sprintf("unable to create mount target path: %v", err))
+		}
+		_, _, err := utils.Command("mount", "-t", "cifs", "-o", fmt.Sprintf("username=%s,password=%s", cifsUsername, cifsPassword), cifs, req.TargetPath)
+		if err != nil {
+			return nil, status.Error(codes.Internal, fmt.Sprintf("unable to cifs mount: %v", err))
+		}
+		return &proto.NodePublishVolumeResponse{}, nil
+	}
+
 	iscsiTarget := req.VolumeContext["iscsi-iqn"]
 	if iscsiTarget == "" {
 		return nil, status.Error(codes.InvalidArgument, "volume context value iscsi-iqn is missing")
@@ -81,13 +113,18 @@ func (s *NodeService) NodeUnpublishVolume(ctx context.Context, req *proto.NodeUn
 	if err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("unable to detect device path from mountpoint: %v", err))
 	}
+	if err := s.mountUtils.UnmountDevice(req.TargetPath); err != nil {
+		return nil, status.Error(codes.Internal, fmt.Sprintf("unable to unmount device: %v", err))
+	}
+
+	if strings.HasPrefix(devicePath, "//") {
+		// looks like cifs
+		return &proto.NodeUnpublishVolumeResponse{}, nil
+	}
+
 	portalIP, portalPort, iscsiTarget, err := s.iscsiUtils.ParseDeviceName(devicePath)
 	if err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("unable to detect iscsi information from device path: %v", err))
-	}
-
-	if err := s.mountUtils.UnmountDevice(req.TargetPath); err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("unable to unmount device: %v", err))
 	}
 
 	if err := s.iscsiUtils.Logout(portalIP, portalPort, iscsiTarget); err != nil {

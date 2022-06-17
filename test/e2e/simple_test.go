@@ -31,6 +31,10 @@ func TestSimple(t *testing.T) {
 		t.Error(err)
 		return
 	}
+	if _, _, err := execKubectl(&env, []string{"apply", "-f", "-"}, test.RenderTemplateFromEnv(env, manifests.SecretCIFSTemplate)); err != nil {
+		t.Error(err)
+		return
+	}
 
 	// creating test consumer
 	if _, _, err := execKubectl(&env, []string{"apply", "-f", "-"}, test.RenderTemplateFromEnv(env, manifests.ConsumerTemplate)); err != nil {
@@ -58,6 +62,20 @@ func TestSimple(t *testing.T) {
 	} else if !strings.Contains(output, "lost+found") {
 		t.Error(fmt.Errorf("pod csi-driver-truenas-consumer-0 does not see the persistent volume correctly"))
 		return
+	}
+
+	// capture output of controller and node
+	if output, _, err := execKubectl(&env, []string{"logs", "-l", "app=csi-driver-truenas-csi-controller", "-n", "csi-driver-truenas", "-c", "csi-driver-truenas-csi-driver"}, ""); err != nil {
+		t.Error(err)
+		return
+	} else {
+		fmt.Printf("Controller logs\n%s\n", output)
+	}
+	if output, _, err := execKubectl(&env, []string{"logs", "-l", "app=csi-driver-truenas-csi-node", "-n", "csi-driver-truenas", "-c", "csi-driver-truenas-csi-driver"}, ""); err != nil {
+		t.Error(err)
+		return
+	} else {
+		fmt.Printf("Node logs\n%s\n", output)
 	}
 
 	// deleting test consumer and its persistent volume claim

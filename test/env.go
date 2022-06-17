@@ -42,6 +42,10 @@ type TestEnv struct {
 	ISCSIPortalPort      string
 	ISCSIPortalID        string
 	ISCSIInitiatorID     string
+	CIFSIP               string
+	CIFSShare            string
+	CIFSUsername         string
+	CIFSPassword         string
 }
 
 func LoadTestEnv() TestEnv {
@@ -130,6 +134,26 @@ func LoadTestEnv() TestEnv {
 	env.ISCSIInitiatorID = os.Getenv("ISCSI_INITIATOR_ID")
 	if env.ISCSIInitiatorID == "" {
 		panic("env ISCSI_INITIATOR_ID is missing")
+	}
+
+	env.CIFSIP = os.Getenv("CIFS_IP")
+	if env.CIFSIP == "" {
+		panic("env CIFS_IP is missing")
+	}
+
+	env.CIFSShare = os.Getenv("CIFS_SHARE")
+	if env.CIFSShare == "" {
+		panic("env CIFS_SHARE is missing")
+	}
+
+	env.CIFSUsername = os.Getenv("CIFS_USERNAME")
+	if env.CIFSUsername == "" {
+		panic("env CIFS_USERNAME is missing")
+	}
+
+	env.CIFSPassword = os.Getenv("CIFS_PASSWORD")
+	if env.CIFSPassword == "" {
+		panic("env CIFS_PASSWORD is missing")
 	}
 
 	return env

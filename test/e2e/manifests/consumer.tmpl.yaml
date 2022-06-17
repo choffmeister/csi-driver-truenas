@@ -35,6 +35,14 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /mnt/data
+            - name: data2
+              mountPath: /mnt/data2
+      volumes:
+        - name: data2
+          csi:
+            driver: truenas.csi.choffmeister.de
+            nodePublishSecretRef:
+              name: csi-driver-truenas-volumes-cifs
   volumeClaimTemplates:
     - metadata:
         name: data
