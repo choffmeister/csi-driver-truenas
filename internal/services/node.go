@@ -99,7 +99,37 @@ func (s *NodeService) NodeUnpublishVolume(ctx context.Context, req *proto.NodeUn
 }
 
 func (s *NodeService) NodeGetVolumeStats(ctx context.Context, req *proto.NodeGetVolumeStatsRequest) (*proto.NodeGetVolumeStatsResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "not supported: NodeGetVolumeStats")
+	if req.VolumePath == "" {
+		return nil, status.Error(codes.InvalidArgument, "missing volume path")
+	}
+
+	totalBytes, usedBytes, availableBytes, err := s.mountUtils.ByteFilesystemStats(req.VolumePath)
+	if err != nil {
+		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to get volume byte stats: %s", err))
+	}
+
+	totalINodes, usedINodes, freeINodes, err := s.mountUtils.INodeFilesystemStats(req.VolumePath)
+	if err != nil {
+		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to get volume inode stats: %s", err))
+	}
+
+	resp := &proto.NodeGetVolumeStatsResponse{
+		Usage: []*proto.VolumeUsage{
+			{
+				Unit:      proto.VolumeUsage_BYTES,
+				Available: availableBytes,
+				Total:     totalBytes,
+				Used:      usedBytes,
+			},
+			{
+				Unit:      proto.VolumeUsage_INODES,
+				Available: freeINodes,
+				Total:     totalINodes,
+				Used:      usedINodes,
+			},
+		},
+	}
+	return resp, nil
 }
 
 func (s *NodeService) NodeGetCapabilities(ctx context.Context, req *proto.NodeGetCapabilitiesRequest) (*proto.NodeGetCapabilitiesResponse, error) {
@@ -109,6 +139,13 @@ func (s *NodeService) NodeGetCapabilities(ctx context.Context, req *proto.NodeGe
 				Type: &proto.NodeServiceCapability_Rpc{
 					Rpc: &proto.NodeServiceCapability_RPC{
 						Type: proto.NodeServiceCapability_RPC_EXPAND_VOLUME,
+					},
+				},
+			},
+			{
+				Type: &proto.NodeServiceCapability_Rpc{
+					Rpc: &proto.NodeServiceCapability_RPC{
+						Type: proto.NodeServiceCapability_RPC_GET_VOLUME_STATS,
 					},
 				},
 			},

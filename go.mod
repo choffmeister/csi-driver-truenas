@@ -10,6 +10,7 @@ require (
 	github.com/joho/godotenv v1.4.0
 	github.com/spf13/cobra v1.4.0
 	github.com/stretchr/testify v1.7.1
+	golang.org/x/sys v0.0.0-20220608164250-635b8c9b7f68
 	google.golang.org/grpc v1.47.0
 	k8s.io/klog/v2 v2.60.1
 	k8s.io/mount-utils v0.24.1
@@ -24,7 +25,6 @@ require (
 	github.com/rogpeppe/go-internal v1.8.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	golang.org/x/net v0.0.0-20220607020251-c690dde0001d // indirect
-	golang.org/x/sys v0.0.0-20220608164250-635b8c9b7f68 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/xerrors v0.0.0-20220411194840-2f41105eb62f // indirect
 	google.golang.org/genproto v0.0.0-20220608133413-ed9918b62aac // indirect

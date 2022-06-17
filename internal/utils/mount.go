@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/go-logr/logr"
+	"golang.org/x/sys/unix"
 	"k8s.io/klog/v2"
 	"k8s.io/mount-utils"
 	"k8s.io/utils/exec"
@@ -82,4 +83,28 @@ func (u *MountUtils) ResizeDevice(device string, target string) error {
 func (u *MountUtils) GetDeviceNameFromMount(path string) (string, int, error) {
 	mounter := mount.New("")
 	return mount.GetDeviceNameFromMount(mounter, path)
+}
+
+func (u *MountUtils) ByteFilesystemStats(volumePath string) (totalBytes int64, usedBytes int64, availableBytes int64, err error) {
+	statfs := &unix.Statfs_t{}
+	err = unix.Statfs(volumePath, statfs)
+	if err != nil {
+		return
+	}
+	totalBytes = int64(statfs.Blocks) * int64(statfs.Bsize)
+	usedBytes = (int64(statfs.Blocks) - int64(statfs.Bfree)) * int64(statfs.Bsize)
+	availableBytes = int64(statfs.Bavail) * int64(statfs.Bsize)
+	return
+}
+
+func (u *MountUtils) INodeFilesystemStats(volumePath string) (total int64, used int64, free int64, err error) {
+	statfs := &unix.Statfs_t{}
+	err = unix.Statfs(volumePath, statfs)
+	if err != nil {
+		return
+	}
+	total = int64(statfs.Files)
+	free = int64(statfs.Ffree)
+	used = total - free
+	return
 }
