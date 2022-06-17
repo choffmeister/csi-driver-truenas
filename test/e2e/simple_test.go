@@ -15,7 +15,7 @@ import (
 )
 
 func TestSimple(t *testing.T) {
-	env := test.LoadTestEnv("../../test.env")
+	env := test.LoadTestEnv()
 	dir, err := os.Getwd()
 	if err != nil {
 		t.Error(err)
@@ -23,24 +23,24 @@ func TestSimple(t *testing.T) {
 	}
 
 	// installing csi-driver-truenas
-	if _, _, err := execKubectl([]string{"apply", "-k", path.Join(dir, "manifests")}, ""); err != nil {
+	if _, _, err := execKubectl(&env, []string{"apply", "-k", path.Join(dir, "manifests")}, ""); err != nil {
 		t.Error(err)
 		return
 	}
-	if _, _, err := execKubectl([]string{"apply", "-f", "-"}, test.RenderTemplateFromEnv(env, manifests.SecretTemplate)); err != nil {
+	if _, _, err := execKubectl(&env, []string{"apply", "-f", "-"}, test.RenderTemplateFromEnv(env, manifests.SecretTemplate)); err != nil {
 		t.Error(err)
 		return
 	}
 
 	// creating test consumer
-	if _, _, err := execKubectl([]string{"apply", "-f", "-"}, test.RenderTemplateFromEnv(env, manifests.ConsumerTemplate)); err != nil {
+	if _, _, err := execKubectl(&env, []string{"apply", "-f", "-"}, test.RenderTemplateFromEnv(env, manifests.ConsumerTemplate)); err != nil {
 		t.Error(err)
 		return
 	}
 
 	// waiting for test consumer to be running
 	if err := test.Retry(func() error {
-		if output, _, err := execKubectl([]string{"get", "pod", "csi-driver-truenas-consumer-0", "-n", "csi-driver-truenas"}, ""); err != nil {
+		if output, _, err := execKubectl(&env, []string{"get", "pod", "csi-driver-truenas-consumer-0", "-n", "csi-driver-truenas"}, ""); err != nil {
 			return err
 		} else if !strings.Contains(output, "Running") {
 			return fmt.Errorf("pod csi-driver-truenas-consumer-0 is not yet running")
@@ -52,7 +52,7 @@ func TestSimple(t *testing.T) {
 	}
 
 	// ensure test consumer to have volume mounted
-	if output, _, err := execKubectl([]string{"exec", "csi-driver-truenas-consumer-0", "-n", "csi-driver-truenas", "--", "ls", "/mnt/data"}, ""); err != nil {
+	if output, _, err := execKubectl(&env, []string{"exec", "csi-driver-truenas-consumer-0", "-n", "csi-driver-truenas", "--", "ls", "/mnt/data"}, ""); err != nil {
 		t.Error(err)
 		return
 	} else if !strings.Contains(output, "lost+found") {
@@ -61,18 +61,18 @@ func TestSimple(t *testing.T) {
 	}
 
 	// deleting test consumer and its persistent volume claim
-	if _, _, err := execKubectl([]string{"delete", "statefulset", "csi-driver-truenas-consumer", "-n", "csi-driver-truenas"}, ""); err != nil {
+	if _, _, err := execKubectl(&env, []string{"delete", "statefulset", "csi-driver-truenas-consumer", "-n", "csi-driver-truenas"}, ""); err != nil {
 		t.Error(err)
 		return
 	}
-	if _, _, err := execKubectl([]string{"delete", "persistentvolumeclaim", "data-csi-driver-truenas-consumer-0", "-n", "csi-driver-truenas"}, ""); err != nil {
+	if _, _, err := execKubectl(&env, []string{"delete", "persistentvolumeclaim", "data-csi-driver-truenas-consumer-0", "-n", "csi-driver-truenas"}, ""); err != nil {
 		t.Error(err)
 		return
 	}
 
 	// waiting for test consumer persistent volume to be deleted
 	if err := test.Retry(func() error {
-		if output, _, err := execKubectl([]string{"get", "persistentvolume"}, ""); err != nil {
+		if output, _, err := execKubectl(&env, []string{"get", "persistentvolume"}, ""); err != nil {
 			return err
 		} else if strings.Contains(output, "data-csi-driver-truenas-consumer-0") {
 			return fmt.Errorf("persistent volume data-csi-driver-truenas-consumer-0 is not yet deleted")
@@ -84,12 +84,26 @@ func TestSimple(t *testing.T) {
 	}
 
 	// uninstalling csi-driver-truenas
-	if _, _, err := execKubectl([]string{"delete", "-f", "-"}, test.RenderTemplateFromEnv(env, manifests.SecretTemplate)); err != nil {
+	if _, _, err := execKubectl(&env, []string{"delete", "-f", "-"}, test.RenderTemplateFromEnv(env, manifests.SecretTemplate)); err != nil {
 		t.Error(err)
 		return
 	}
-	if _, _, err := execKubectl([]string{"delete", "-k", path.Join(dir, "manifests")}, ""); err != nil {
+	if _, _, err := execKubectl(&env, []string{"delete", "-k", path.Join(dir, "manifests")}, ""); err != nil {
 		t.Error(err)
 		return
 	}
+}
+
+func execKubectl(env *test.TestEnv, args []string, stdin string) (string, int, error) {
+	fullArgs := []string{"--kubeconfig", env.KubeConfig}
+	fullArgs = append(fullArgs, args...)
+	opts := test.ExecOpts{
+		Name:       env.KubectlBin,
+		Args:       fullArgs,
+		Input:      stdin,
+		Output:     os.Stdout,
+		Retries:    300 / 5,
+		RetryDelay: 5 * time.Second,
+	}
+	return test.ExecWithOpts(opts)
 }

@@ -8,23 +8,6 @@ import (
 	"net/http"
 	"os"
 	"path"
-	"runtime"
-)
-
-var (
-	kubernetesVersion = "1.24.1"
-	talosVersion      = "1.0.5"
-	BaseDir           = path.Join(os.TempDir(), "csi-driver-truenas-test")
-
-	e2eUrl       = fmt.Sprintf("https://dl.k8s.io/v%s/kubernetes-test-%s-%s.tar.gz", kubernetesVersion, runtime.GOOS, runtime.GOARCH)
-	E2ETestBin   = fmt.Sprintf("%s/e2e-test-%s.test", BaseDir, kubernetesVersion)
-	E2EGinkgoBin = fmt.Sprintf("%s/e2e-ginkgo-%s", BaseDir, kubernetesVersion)
-
-	kubectlUrl = fmt.Sprintf("https://dl.k8s.io/release/v%s/bin/%s/%s/kubectl", kubernetesVersion, runtime.GOOS, runtime.GOARCH)
-	KubectlBin = fmt.Sprintf("%s/kubectl-%s", BaseDir, kubernetesVersion)
-
-	talosctlUrl = fmt.Sprintf("https://github.com/siderolabs/talos/releases/download/v%s/talosctl-%s-%s", talosVersion, runtime.GOOS, runtime.GOARCH)
-	TalosctlBin = fmt.Sprintf("%s/talosctl-%s", BaseDir, talosVersion)
 )
 
 type BinariesUnpack interface {
@@ -133,31 +116,6 @@ func PrepareBinaries(url string, unpack BinariesUnpack) error {
 
 	if err := unpack.Unpack(resp.Body); err != nil {
 		return err
-	}
-
-	return nil
-}
-
-func PrepareAllBinaries() error {
-	binaryPacks := map[string]BinariesUnpack{
-		e2eUrl: &TarGzBinariesUnpack{
-			Entries: map[string]string{
-				"kubernetes/test/bin/e2e.test": E2ETestBin,
-				"kubernetes/test/bin/ginkgo":   E2EGinkgoBin,
-			},
-		},
-		kubectlUrl: &RawBinariesUnpack{
-			Name: KubectlBin,
-		},
-		talosctlUrl: &RawBinariesUnpack{
-			Name: TalosctlBin,
-		},
-	}
-
-	for url, unpack := range binaryPacks {
-		if err := PrepareBinaries(url, unpack); err != nil {
-			return nil
-		}
 	}
 
 	return nil

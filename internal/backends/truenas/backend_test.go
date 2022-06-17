@@ -16,7 +16,7 @@ func Test_TruenasBackend(t *testing.T) {
 	backend := NewTruenasBackend()
 	err = backend.LoadParameters(map[string]string{})
 	assert.NoError(t, err)
-	err = backend.LoadSecrets(storageClassSecretsFromEnv(test.LoadTestEnv("../../../test.env")))
+	err = backend.LoadSecrets(storageClassSecretsFromEnv(test.LoadTestEnv()))
 	assert.NoError(t, err)
 
 	name := "csi-driver-truenas-test-" + utils.RandomString(8)
@@ -44,7 +44,7 @@ func Test_TruenasBackend_Idempotency(t *testing.T) {
 	backend := NewTruenasBackend()
 	err = backend.LoadParameters(map[string]string{})
 	assert.NoError(t, err)
-	err = backend.LoadSecrets(storageClassSecretsFromEnv(test.LoadTestEnv("../../../test.env")))
+	err = backend.LoadSecrets(storageClassSecretsFromEnv(test.LoadTestEnv()))
 	assert.NoError(t, err)
 
 	name := "csi-driver-truenas-test-" + utils.RandomString(8)
