@@ -43,6 +43,8 @@ spec:
             driver: truenas.csi.choffmeister.de
             nodePublishSecretRef:
               name: csi-driver-truenas-volumes-cifs
+            volumeAttributes:
+              cifs-share: "{{ .Env.CIFSShare }}"
   volumeClaimTemplates:
     - metadata:
         name: data

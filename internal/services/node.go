@@ -42,19 +42,19 @@ func (s *NodeService) NodePublishVolume(ctx context.Context, req *proto.NodePubl
 	if ephemeral := req.VolumeContext["csi.storage.k8s.io/ephemeral"]; ephemeral == "true" {
 		cifsIP := req.Secrets["cifs-ip"]
 		if cifsIP == "" {
-			return nil, status.Error(codes.InvalidArgument, "volume context value cifs-ip is missing")
-		}
-		cifsShare := req.Secrets["cifs-share"]
-		if cifsShare == "" {
-			return nil, status.Error(codes.InvalidArgument, "volume context value cifs-share is missing")
+			return nil, status.Error(codes.InvalidArgument, "secret value cifs-ip is missing")
 		}
 		cifsUsername := req.Secrets["cifs-username"]
 		if cifsUsername == "" {
-			return nil, status.Error(codes.InvalidArgument, "volume context value cifs-username is missing")
+			return nil, status.Error(codes.InvalidArgument, "secret value cifs-username is missing")
 		}
 		cifsPassword := req.Secrets["cifs-password"]
 		if cifsPassword == "" {
-			return nil, status.Error(codes.InvalidArgument, "volume context value cifs-password is missing")
+			return nil, status.Error(codes.InvalidArgument, "secret value cifs-password is missing")
+		}
+		cifsShare := req.VolumeContext["cifs-share"]
+		if cifsShare == "" {
+			return nil, status.Error(codes.InvalidArgument, "volume context value cifs-share is missing")
 		}
 		cifs := fmt.Sprintf("//%s/%s", cifsIP, cifsShare)
 
@@ -71,7 +71,7 @@ func (s *NodeService) NodePublishVolume(ctx context.Context, req *proto.NodePubl
 
 	iscsiTarget := req.VolumeContext["iscsi-iqn"]
 	if iscsiTarget == "" {
-		return nil, status.Error(codes.InvalidArgument, "volume context value iscsi-iqn is missing")
+		return nil, status.Error(codes.InvalidArgument, "secret value iscsi-iqn is missing")
 	}
 
 	_, err := NewBackendForNodePublish(req.PublishContext, req.Secrets)
