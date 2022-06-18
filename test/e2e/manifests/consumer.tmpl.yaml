@@ -45,6 +45,8 @@ spec:
               name: csi-driver-truenas-volumes-cifs
             volumeAttributes:
               cifs-share: "{{ .Env.CIFSShare }}"
+              cifs-uid: "999"
+              cifs-gid: "999"
   volumeClaimTemplates:
     - metadata:
         name: data

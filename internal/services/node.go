@@ -58,11 +58,24 @@ func (s *NodeService) NodePublishVolume(ctx context.Context, req *proto.NodePubl
 		}
 		cifs := fmt.Sprintf("//%s/%s", cifsIP, cifsShare)
 
+		cifsUID := req.VolumeContext["cifs-uid"]
+		cifsGID := req.VolumeContext["cifs-gid"]
+
+		options := []string{}
+		options = append(options, "username="+cifsUsername)
+		options = append(options, "password="+cifsUsername)
+		if cifsUID != "" {
+			options = append(options, "uid="+cifsUID)
+		}
+		if cifsGID != "" {
+			options = append(options, "gid="+cifsGID)
+		}
+
 		utils.Info.Printf("Mounting cifs %s to %s\n", cifs, req.TargetPath)
 		if err := os.MkdirAll(req.TargetPath, 0o775); err != nil {
 			return nil, status.Error(codes.Internal, fmt.Sprintf("unable to create mount target path: %v", err))
 		}
-		_, _, err := utils.Command("mount", "-t", "cifs", "-o", fmt.Sprintf("username=%s,password=%s", cifsUsername, cifsPassword), cifs, req.TargetPath)
+		_, _, err := utils.Command("mount", "-t", "cifs", "-o", strings.Join(options, ","), cifs, req.TargetPath)
 		if err != nil {
 			return nil, status.Error(codes.Internal, fmt.Sprintf("unable to cifs mount: %v", err))
 		}
