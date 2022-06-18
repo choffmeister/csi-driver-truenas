@@ -74,13 +74,22 @@ func (s *NodeService) NodePublishVolume(ctx context.Context, req *proto.NodePubl
 		return nil, status.Error(codes.InvalidArgument, "secret value iscsi-iqn is missing")
 	}
 
-	_, err := NewBackendForNodePublish(req.PublishContext, req.Secrets)
+	backend, err := NewBackendForNodePublish(req.PublishContext, req.Secrets)
 	if err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("unable to create backend: %v", err))
 	}
 	iscsi, err := backends.LoadISCSISecrets(req.Secrets)
 	if err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("unable to load iscsi secrets: %v", err))
+	}
+
+	podNamespace := req.VolumeContext["csi.storage.k8s.io/pod.namespace"]
+	podName := req.VolumeContext["csi.storage.k8s.io/pod.name"]
+	if podNamespace != "" && podName != "" {
+		err := backend.CommentVolume(ctx, req.VolumeId, fmt.Sprintf("%s/%s", podNamespace, podName))
+		if err != nil {
+			return nil, status.Error(codes.Internal, fmt.Sprintf("unable to set volume comment: %v", err))
+		}
 	}
 
 	err = s.iscsiUtils.Login(iscsi.PortalIP, iscsi.PortalPort, iscsiTarget)

@@ -139,9 +139,18 @@ func (b *TruenasBackend) DeleteVolume(ctx context.Context, id string) error {
 	}
 	return nil
 }
+
 func (b *TruenasBackend) ExpandVolume(ctx context.Context, id string, size int64) error {
-	if _, err := b.httpClient.PoolDatasetPut(ctx, id, size); err != nil {
+	if _, err := b.httpClient.PoolDatasetPutVolsize(ctx, id, size); err != nil {
 		return fmt.Errorf("unable to resize dataset: %v", err)
+	}
+
+	return nil
+}
+
+func (b *TruenasBackend) CommentVolume(ctx context.Context, id string, comment string) error {
+	if _, err := b.httpClient.PoolDatasetPutComments(ctx, id, comment); err != nil {
+		return fmt.Errorf("unable to set dataset comment: %v", err)
 	}
 
 	return nil

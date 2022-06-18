@@ -90,11 +90,25 @@ func (c *TruenasHttpClient) PoolDatasetPost(ctx context.Context, name string, vo
 }
 
 // https://www.truenas.com/docs/api/rest.html#api-PoolDataset-poolDatasetPut
-func (c *TruenasHttpClient) PoolDatasetPut(ctx context.Context, id string, volsize int64) (*PoolDataset, error) {
+func (c *TruenasHttpClient) PoolDatasetPutVolsize(ctx context.Context, id string, volsize int64) (*PoolDataset, error) {
 	req := struct {
 		Volsize int64 `json:"volsize"`
 	}{
 		Volsize: volsize,
+	}
+	res := PoolDataset{}
+	if err := c.http.Put(ctx, "/pool/dataset/id/"+url.QueryEscape(id), &req, &res); err != nil {
+		return nil, fmt.Errorf("unable to call PoolDatasetPut: %w", err)
+	}
+	return &res, nil
+}
+
+// https://www.truenas.com/docs/api/rest.html#api-PoolDataset-poolDatasetPut
+func (c *TruenasHttpClient) PoolDatasetPutComments(ctx context.Context, id string, comments string) (*PoolDataset, error) {
+	req := struct {
+		Comments string `json:"comments"`
+	}{
+		Comments: comments,
 	}
 	res := PoolDataset{}
 	if err := c.http.Put(ctx, "/pool/dataset/id/"+url.QueryEscape(id), &req, &res); err != nil {

@@ -13,6 +13,7 @@ type Backend interface {
 	CreateVolume(ctx context.Context, name string, size int64) (string, error)
 	DeleteVolume(ctx context.Context, id string) error
 	ExpandVolume(ctx context.Context, id string, size int64) error
+	CommentVolume(ctx context.Context, id string, comment string) error
 	GetISCSISecrets() *ISCSISecrets
 }
 
