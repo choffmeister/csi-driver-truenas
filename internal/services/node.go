@@ -63,7 +63,7 @@ func (s *NodeService) NodePublishVolume(ctx context.Context, req *proto.NodePubl
 
 		options := []string{}
 		options = append(options, "username="+cifsUsername)
-		options = append(options, "password="+cifsUsername)
+		options = append(options, "password="+cifsPassword)
 		if cifsUID != "" {
 			options = append(options, "uid="+cifsUID)
 		}
