@@ -65,13 +65,13 @@ func TestSimple(t *testing.T) {
 	}
 
 	// capture output of controller and node
-	if output, _, err := execKubectl(&env, []string{"logs", "-l", "app=csi-driver-truenas-csi-controller", "-n", "csi-driver-truenas", "-c", "csi-driver-truenas-csi-driver"}, ""); err != nil {
+	if output, _, err := execKubectl(&env, []string{"logs", "-l", "app=csi-driver-truenas-csi-controller", "-n", "csi-driver-truenas", "-c", "csi-driver-truenas-csi-driver", "--tail=100"}, ""); err != nil {
 		t.Error(err)
 		return
 	} else {
 		fmt.Printf("Controller logs\n%s\n", output)
 	}
-	if output, _, err := execKubectl(&env, []string{"logs", "-l", "app=csi-driver-truenas-csi-node", "-n", "csi-driver-truenas", "-c", "csi-driver-truenas-csi-driver"}, ""); err != nil {
+	if output, _, err := execKubectl(&env, []string{"logs", "-l", "app=csi-driver-truenas-csi-node", "-n", "csi-driver-truenas", "-c", "csi-driver-truenas-csi-driver", "--tail=100"}, ""); err != nil {
 		t.Error(err)
 		return
 	} else {
